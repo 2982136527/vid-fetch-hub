@@ -3,48 +3,24 @@ name: Build and Push Docker Images
 on:
   push:
     branches: [main]
-    tags: ["v*"]
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: vid-fetch-hub
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  version:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Determine version
-        id: version
-        run: |
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            VERSION="${TAG#v}"
-          else
-            IFS='.' read -r MAJOR MINOR PATCH <<< "${TAG#v}"
-            VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Building version: $VERSION"
-
   build:
-    needs: version
-    strategy:
-      matrix:
-        platform: [linux/amd64, linux/arm64]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up QEMU
-        if: matrix.platform == 'linux/arm64'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -53,58 +29,37 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine version
+        id: version
+        run: |
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.version }}-${{ matrix.platform == 'linux/amd64' && 'x86' || 'arm64' }}
-          cache-from: type=gha,scope=${{ matrix.platform }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Save x86 image as artifact
-        if: matrix.platform == 'linux/amd64'
+      - name: Save x86 archive
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.version }}-x86 --platform linux/amd64
-          docker save ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.version }}-x86 | gzip > /tmp/vid-fetch-hub-v${{ needs.version.outputs.version }}-x86.tar.gz
+          docker pull ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }} --platform linux/amd64
+          docker save ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }} | gzip > /tmp/vid-fetch-hub-v${{ steps.version.outputs.version }}-x86.tar.gz
 
       - name: Upload x86 artifact
-        if: matrix.platform == 'linux/amd64'
         uses: actions/upload-artifact@v4
         with:
-          name: vid-fetch-hub-v${{ needs.version.outputs.version }}-x86.tar.gz
-          path: /tmp/vid-fetch-hub-v${{ needs.version.outputs.version }}-x86.tar.gz
+          name: vid-fetch-hub-v${{ steps.version.outputs.version }}-x86.tar.gz
+          path: /tmp/vid-fetch-hub-v${{ steps.version.outputs.version }}-x86.tar.gz
           retention-days: 90
-
-  manifest:
-    needs: [version, build]
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-    steps:
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create multi-arch manifest
-        run: |
-          docker manifest create ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.version }} \
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.version }}-x86 \
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.version }}-arm64
-          docker manifest push ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.version }}
-
-      - name: Tag latest
-        run: |
-          docker manifest create ${{ env.REGISTRY }}/${{ github.repository }}:latest \
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.version }}-x86 \
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.version }}-arm64
-          docker manifest push ${{ env.REGISTRY }}/${{ github.repository }}:latest

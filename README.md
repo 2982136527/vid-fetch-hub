@@ -49,9 +49,6 @@ docker load -i vid-fetch-hub-x86.tar.gz
 ```bash
 # 拉取 latest
 docker pull ghcr.io/qiuhu/vid-fetch-hub:latest
-
-# 拉取指定版本
-docker pull ghcr.io/qiuhu/vid-fetch-hub:0.0.1
 ```
 
 **方式 B：导入本地 tar 包**

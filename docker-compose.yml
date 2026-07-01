@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  vid-fetch-hub:
+    build: .
+    container_name: vid-fetch-hub
+    restart: unless-stopped
+    ports:
+      - "8383:8383"
+    volumes:
+      # 映射配置目录（NAS Docker管理界面会显示）
+      - ./config:/config:ro
+      # 映射输出目录（STRM文件、封面、NFO）
+      - ./output:/output
+    environment:
+      # STRM 文件中使用的公网地址（重要！）
+      # 格式: "http://<你的NAS_IP>:8383" 或 "https://你的域名:8383"
+      - VFH_PUBLIC_URL=http://127.0.0.1:8383
+      # 出口HTTP代理（如果NAS无法直连目标网站）
+      # - VFH_HTTP_PROXY=http://192.168.1.1:1080
+      # - VFH_HTTPS_PROXY=http://192.168.1.1:1080
+      # 时区
+      - TZ=Asia/Shanghai

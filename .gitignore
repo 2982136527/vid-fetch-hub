@@ -1,0 +1,22 @@
+# API documentation (confidential - reverse engineering details)
+*_api_documentation.md
+*API文档*.md
+Thumbzilla_API文档.md
+YouPorn_API文档.md
+RedTube_API文档.md
+PornHub_API文档.md
+
+# Python
+__pycache__/
+venv/
+*.pyc
+
+# Docker
+vid-fetch-hub-x86.tar.gz
+
+# Output
+output/
+test_output/
+
+# OS
+.DS_Store

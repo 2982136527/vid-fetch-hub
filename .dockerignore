@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.git/
+.claude/
+memory/
+test_output/
+output/
+*.md
+*.tar.gz

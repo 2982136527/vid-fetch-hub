@@ -1,0 +1,97 @@
+# ============================================
+# Vid-Fetch-Hub Configuration
+# ============================================
+
+# Output directory for STRM files and metadata (NFO, covers)
+output_dir: "/output"
+
+# Organize by site (true) or unified (false)
+# true  -> ./output/XVideos/Video Title/...
+# false -> ./output/Video Title/...
+organize_by_site: true
+
+# ----- Proxy Server Settings -----
+proxy:
+  # Listen host and port
+  host: "0.0.0.0"
+  port: 8383
+  # Public URL for STRM files (required for external access)
+  # Example: "http://192.168.1.100:8383" or "http://your-domain.com:8383"
+  # Leave empty to auto-generate from host:port
+  public_url: "http://192.168.6.230:8383"
+  # Cache fresh video URLs for N seconds (reduces re-scraping)
+  cache_seconds: 30
+
+# ----- HTTP Proxy for Crawler (optional) -----
+# If your NAS cannot directly access the target websites,
+# set an HTTP proxy here. Supports http and https proxies.
+# http_proxy: "http://192.168.1.1:1080"
+# https_proxy: "http://192.168.1.1:1080"
+
+# ----- Crawler Settings -----
+# Interval in minutes for checking new content when scheduler runs
+check_interval_minutes: 60
+
+# How many pages to scrape per source per run (0 = unlimited)
+max_pages_per_run: 2
+
+# Sites configuration - enable/disable individual sites
+sites:
+  xvideos:
+    enabled: true
+    base_url: "https://www.xvideos.com"
+    max_pages: 2
+
+  youporn:
+    enabled: false
+    base_url: "https://www.youporn.com"
+    max_pages: 2
+
+  redtube:
+    enabled: false
+    base_url: "https://www.redtube.com"
+    max_pages: 2
+
+  thumbzilla:
+    enabled: false
+    base_url: "https://www.thumbzilla.com"
+    max_pages: 2
+
+  acfan:
+    enabled: true
+    permanent_page: "https://521.acfan.com/"
+    login:
+      username: "test333"
+      password: "test333"
+    classify_titles: ["视频", "动漫"]
+    max_pages: 2
+
+  pornhub:
+    enabled: false
+    base_url: "https://www.pornhub.com"
+    max_pages: 2
+
+  tube8:
+    enabled: false
+    base_url: "https://www.tube8.com"
+    max_pages: 2
+
+  madou:
+    enabled: true
+    base_url: "https://madou.club"
+    max_pages: 2
+
+  eighteen_mh:
+    enabled: true
+    base_url: "https://18mh.net"
+    max_pages: 2
+
+# Request settings
+request:
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  timeout: 30
+  retry_max: 3
+  retry_delay: 5
+  rate_limit:
+    min: 1.0
+    max: 3.0

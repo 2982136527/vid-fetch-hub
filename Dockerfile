@@ -4,17 +4,17 @@ WORKDIR /app
 
 # Install ffmpeg (for HLS)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg libgtk-3-0 libgdk-pixbuf2.0-0 libnotify4 libsoup-3.0-0 \
-    libwebkit2gtk-4.1-0 libxdamage1 \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright's Chromium (ACFAN cover decryption)
+# Install Playwright Chromium (for ACFAN cover decryption)
+# Use install-deps to pull missing system libraries
 RUN python3 -m playwright install chromium && \
-    python3 -m playwright install-deps chromium 2>&1
+    python3 -m playwright install-deps chromium 2>&1 || echo "Playwright deps may be incomplete, continuing..."
 
 COPY . .
 
